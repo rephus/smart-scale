@@ -5,6 +5,8 @@ from balance import Balance
 from bluetooth import BluetoothError
 import subprocess
 
+MAX_STABLE_WEIGHTS = 20
+
 def log(msg, level= "INFO"):
     now = time.strftime('%m-%d %H:%M')
     print("{now} - {level}: {msg}".format(**locals()))
@@ -85,7 +87,7 @@ def main():
                         weight = round2(weight) # Weight becomes a string
                         lastWeights = add_list(lastWeights,weight)
 
-                        if len(lastWeights) == 10 and all_same(lastWeights):
+                        if len(lastWeights) == MAX_STABLE_WEIGHTS and all_same(lastWeights):
 
                             if weight > 60:
                                 user = "javi"
@@ -105,6 +107,9 @@ def main():
                                 time.sleep(0.1)
 
                             board.setLight(True)
+                    elif lastWeights:
+                        log("Removing cached weights {}".format(lastWeights))
+                        lastWeights = []
 
                 #else:
                 #    print ("Got different event type {}".format(event.type))
@@ -122,6 +127,13 @@ def main():
             log("Disconnecting board")
             board.disconnect()
             main() #Retrying
+    except Exception as e:
+        log("Got unexpected error {}".format(e), level = "ERROR")
+        if board:
+            log("Disconnecting board")
+            board.disconnect()
+            main() #Retrying
+
 
 #Run the script if executed
 if __name__ == "__main__":
